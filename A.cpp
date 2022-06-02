@@ -336,6 +336,8 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 {
     int N = (int)F1.size();
 
+    int WIDTH = 128;
+
     for (int flip=0; flip<2; flip++)
     {
         //  F1とF2の対応
@@ -414,7 +416,8 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
             sort(S.begin(), S.end(), [&](State &s1, State &s2){
                 return s1.score>s2.score;
             });
-            S.resize(128);
+            if (S.size()>WIDTH)
+                S.resize(WIDTH);
 
             if (S[0].score/100==((N+10)*(N-2)+10*N)*100)
                 return S[0].moves;
