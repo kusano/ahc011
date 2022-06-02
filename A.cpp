@@ -158,56 +158,11 @@ vector<vector<int>> get_tree(vector<vector<int>> F)
     return F2;
 }
 
-//  Fにmovesを適用する
-vector<vector<int>> apply_moves(vector<vector<int>> F, int sx, int sy, string moves)
-{
-    int N = (int)F.size();
-
-    for (char m: moves)
-        switch (m)
-        {
-        case 'U':
-            if (sy-1<0)
-            {
-                F[0][0] = -1;
-                return F;
-            }
-            swap(F[sy][sx], F[sy-1][sx]);
-            sy--;
-            break;
-        case 'D':
-            if (N<=sy+1)
-            {
-                F[0][0] = -1;
-                return F;
-            }
-            swap(F[sy][sx], F[sy+1][sx]);
-            sy++;
-            break;
-        case 'L':
-            if (sx-1<0)
-            {
-                F[0][0] = -1;
-                return F;
-            }
-            swap(F[sy][sx], F[sy][sx-1]);
-            sx--;
-            break;
-        case 'R':
-            if (N<=sx+1)
-            {
-                F[0][0] = -1;
-                return F;
-            }
-            swap(F[sy][sx], F[sy][sx+1]);
-            sx++;
-            break;
-        }
-    return F;
-}
-
 struct State
 {
+    vector<vector<int>> F;
+    int sx = 0;
+    int sy = 0;
     string moves;
     int score = 0;
 };
@@ -216,9 +171,6 @@ struct State
 int get_score2(vector<vector<int>> F)
 {
     int N = (int)F.size();
-
-    if (F[0][0]==-1)
-        return -99999999;
 
     //  揃っている行数
     int compl_ = 0;
@@ -405,6 +357,15 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 
     int T = 2*N*N*N;
     vector<State> S(1);
+    S[0].F = F;
+    for (int y=0; y<N; y++)
+        for (int x=0; x<N; x++)
+            if (S[0].F[y][x]==N*N-1)
+            {
+                S[0].sx = x;
+                S[0].sy = y;
+            }
+    S[0].score = get_score2(S[0].F)*100;
 
     for (int t=0; t<T; t++)
     {
@@ -422,10 +383,34 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
                     m=='R' && p=='L')
                     continue;
 
+                if (
+                    m=='U' && s.sy-1<0 ||
+                    m=='D' && s.sy+1>=N ||
+                    m=='L' && s.sx-1<0 ||
+                    m=='R' && s.sx+1>=N)
+                    continue;
+
                 State s2 = s;
+                switch (m) {
+                case 'U':
+                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy-1][s2.sx]);
+                    s2.sy--;
+                    break;
+                case 'D':
+                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy+1][s2.sx]);
+                    s2.sy++;
+                    break;
+                case 'L':
+                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy][s2.sx-1]);
+                    s2.sx--;
+                    break;
+                case 'R':
+                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy][s2.sx+1]);
+                    s2.sx++;
+                    break;
+                }
                 s2.moves += m;
-                vector<vector<int>> Ft = apply_moves(F, sx, sy, s2.moves);
-                s2.score = get_score2(Ft)*100 + xor64()%100;
+                s2.score = get_score2(s2.F)*100 + xor64()%100;
                 S2.push_back(s2);
             }
         S = S2;
@@ -461,6 +446,7 @@ int main()
     auto start = chrono::system_clock::now();
 
     vector<vector<int>> F2 = get_tree(F);
+    //cerr<<to_string(F2)<<endl;
 
     auto end = chrono::system_clock::now();
 
