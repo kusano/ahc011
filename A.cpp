@@ -210,7 +210,10 @@ int get_score2(vector<vector<int>> F)
         }
         else
         {
-            if (F[compl_][N-2]==compl_*N+N-2 &&
+            if (F[compl_][N-2]==compl_*N+N-1 &&
+                F[compl_][N-1]==compl_*N+N-2)
+                ;
+            else if (F[compl_][N-2]==compl_*N+N-2 &&
                 F[compl_][N-1]==N*N-1 &&
                 F[compl_+1][N-1]==compl_*N+N-1)
                 s += 3;
@@ -246,7 +249,10 @@ int get_score2(vector<vector<int>> F)
 
         if (compr<N-2)
         {
-            if (F[N-2][compr]==(N-2)*N+compr &&
+            if (F[N-2][compr]==(N-1)*N+compr &&
+                F[N-1][compr]==(N-2)*N+compr)
+                ;
+            else if (F[N-2][compr]==(N-2)*N+compr &&
                 F[N-1][compr]==N*N-1 &&
                 F[N-1][compr+1]==(N-1)*N+compr)
                 s += 3;
@@ -419,6 +425,8 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
         });
         if (S.size()>WIDTH)
             S.resize(WIDTH);
+
+        //cerr<<S[0].score<<endl;
 
         if (S[0].score/100==((N+10)*(N-2)+10*N)*100)
             break;
