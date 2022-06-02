@@ -294,7 +294,7 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 {
     int N = (int)F1.size();
 
-    int WIDTH = 128;
+    int WIDTH = N<10 ? 256 : 128;
 
     //  F1とF2の対応
     //  これを並び替えて、0, 1, 2, ... になれば良い
