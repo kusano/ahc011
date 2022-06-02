@@ -4,6 +4,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 using namespace std;
 
 int xor64() {
@@ -337,7 +338,6 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 
     for (int flip=0; flip<2; flip++)
     {
-        cerr<<flip<<endl;
         //  F1とF2の対応
         //  これを並び替えて、0, 1, 2, ... になれば良い
         vector<vector<int>> F(N, vector<int>(N));
@@ -416,14 +416,8 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
             });
             S.resize(128);
 
-            //cerr<<S[0].score<<endl;
-
             if (S[0].score/100==((N+10)*(N-2)+10*N)*100)
-            {
-                cerr<<"Perfect!"<<endl;
-                cerr<<"moves: "<<S[0].moves.size()<<"/"<<T<<endl;
                 return S[0].moves;
-            }
         }
 
         if (flip>0)
@@ -449,17 +443,32 @@ int main()
                 F[y][x] = t[x]-'a'+10;
     }
 
+    auto start = chrono::system_clock::now();
+
     vector<vector<int>> F2 = get_tree(F);
 
-    cerr<<get_score1(F, F2)<<endl;
-    cerr<<to_string(F2)<<endl;
+    auto end = chrono::system_clock::now();
+
+    cerr<<get_score1(F, F2)<<"/"<<N*N<<endl;
+    cerr<<chrono::duration_cast<chrono::milliseconds>(end-start).count()<<" ms"<<endl;
 
     if (get_score1(F, F2)<N*N)
     {
+        cerr<<"phase 1 NG"<<endl;
+        cerr<<endl;
+
         cout<<endl;
         return 0;
     }
 
     string moves = get_moves(F, F2);
     cout<<moves<<endl;
+
+    end = chrono::system_clock::now();
+
+    cerr<<moves.size()<<"/"<<T<<endl;
+    cerr<<chrono::duration_cast<chrono::milliseconds>(end-start).count()<<" ms"<<endl;
+    if (moves.size()==T)
+        cerr<<"phase 2 NG"<<endl;
+    cerr<<endl<<endl;
 }
