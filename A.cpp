@@ -338,96 +338,108 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 
     int WIDTH = 128;
 
-    for (int flip=0; flip<2; flip++)
-    {
-        //  F1とF2の対応
-        //  これを並び替えて、0, 1, 2, ... になれば良い
-        vector<vector<int>> F(N, vector<int>(N));
+    //  F1とF2の対応
+    //  これを並び替えて、0, 1, 2, ... になれば良い
+    vector<vector<int>> F(N, vector<int>(N));
 
-        vector<vector<bool>> U(N, vector<bool>(N));
-        int sx = 0;
-        int sy = 0;
-        for (int y1=0; y1<N; y1++)
-            for (int x1=0; x1<N; x1++)
+    vector<vector<bool>> U(N, vector<bool>(N));
+    int sx = 0;
+    int sy = 0;
+    for (int y1=0; y1<N; y1++)
+        for (int x1=0; x1<N; x1++)
+        {
+            if (F1[y1][x1]==0)
             {
-                if (F1[y1][x1]==0)
-                {
-                    sx = x1;
-                    sy = y1;
-                }
+                sx = x1;
+                sy = y1;
+            }
+            for (int y2=0; y2<N; y2++)
+                for (int x2=0; x2<N; x2++)
+                    if (!U[y2][x2] && F1[y1][x1]==F2[y2][x2])
+                    {
+                        U[y2][x2] = true;
+                        F[y1][x1] = y2*N+x2;
+                        goto end;
+                    }
+        end:;
+        }
+
+    //  パリティチェック
+    int p = 0;
+    vector<vector<int>> Ftemp = F;
+    for (int y1=0; y1<N; y1++)
+        for (int x1=0; x1<N; x1++)
+        {
+            if (Ftemp[y1][x1]!=y1*N+x1)
                 for (int y2=0; y2<N; y2++)
                     for (int x2=0; x2<N; x2++)
-                        if (!U[y2][x2] && F1[y1][x1]==F2[y2][x2])
+                        if (Ftemp[y2][x2]==y1*N+x1)
                         {
-                            U[y2][x2] = true;
-                            F[y1][x1] = y2*N+x2;
-                            goto end;
+                            swap(Ftemp[y1][x1], Ftemp[y2][x2]);
+                            p ^= 1;
                         }
-            end:;
-            }
+            if (F[y1][x1]==N*N-1)
+                p ^= (abs(N-1-x1)+abs(N-1-y1))%2;
+        }
 
-        if (flip!=0)
+    if (p!=0)
+    {
+        while (true)
         {
-            while (true)
+            int x1 = xor64()%N;
+            int y1 = xor64()%N;
+            int x2 = xor64()%N;
+            int y2 = xor64()%N;
+            if (x1!=x2 || y1!=y2)
             {
-                int x1 = xor64()%N;
-                int y1 = xor64()%N;
-                int x2 = xor64()%N;
-                int y2 = xor64()%N;
-                if (x1!=x2 || y1!=y2)
+                int f1 = F[y1][x1];
+                int f2 = F[y2][x2];
+                if (F2[f1/N][f1%N]==F2[f2/N][f2%N])
                 {
-                    int f1 = F[y1][x1];
-                    int f2 = F[y2][x2];
-                    if (F2[f1/N][f1%N]==F2[f2/N][f2%N])
-                    {
-                        swap(F[y1][x1], F[y2][x2]);
-                        break;
-                    }
+                    swap(F[y1][x1], F[y2][x2]);
+                    break;
                 }
             }
         }
-
-        int T = 2*N*N*N;
-        vector<State> S(1);
-
-        for (int t=0; t<T; t++)
-        {
-            vector<State> S2;
-            for (State &s: S)
-                for (char m: string("UDLR"))
-                {
-                    char p = '?';
-                    if (!s.moves.empty())
-                        p = s.moves.back();
-                    if (
-                        m=='U' && p=='D' ||
-                        m=='D' && p=='U' ||
-                        m=='L' && p=='R' ||
-                        m=='R' && p=='L')
-                        continue;
-
-                    State s2 = s;
-                    s2.moves += m;
-                    vector<vector<int>> Ft = apply_moves(F, sx, sy, s2.moves);
-                    s2.score = get_score2(Ft)*100 + xor64()%100;
-                    S2.push_back(s2);
-                }
-            S = S2;
-            sort(S.begin(), S.end(), [&](State &s1, State &s2){
-                return s1.score>s2.score;
-            });
-            if (S.size()>WIDTH)
-                S.resize(WIDTH);
-
-            if (S[0].score/100==((N+10)*(N-2)+10*N)*100)
-                return S[0].moves;
-        }
-
-        if (flip>0)
-            return S[0].moves;
     }
 
-    return "";
+    int T = 2*N*N*N;
+    vector<State> S(1);
+
+    for (int t=0; t<T; t++)
+    {
+        vector<State> S2;
+        for (State &s: S)
+            for (char m: string("UDLR"))
+            {
+                char p = '?';
+                if (!s.moves.empty())
+                    p = s.moves.back();
+                if (
+                    m=='U' && p=='D' ||
+                    m=='D' && p=='U' ||
+                    m=='L' && p=='R' ||
+                    m=='R' && p=='L')
+                    continue;
+
+                State s2 = s;
+                s2.moves += m;
+                vector<vector<int>> Ft = apply_moves(F, sx, sy, s2.moves);
+                s2.score = get_score2(Ft)*100 + xor64()%100;
+                S2.push_back(s2);
+            }
+        S = S2;
+        sort(S.begin(), S.end(), [&](State &s1, State &s2){
+            return s1.score>s2.score;
+        });
+        if (S.size()>WIDTH)
+            S.resize(WIDTH);
+
+        if (S[0].score/100==((N+10)*(N-2)+10*N)*100)
+            break;
+    }
+
+    return S[0].moves;
 }
 
 int main()
