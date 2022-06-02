@@ -453,7 +453,14 @@ int main()
 
     auto start = chrono::system_clock::now();
 
-    vector<vector<int>> F2 = get_tree(F);
+    vector<vector<int>> F2;
+    for (int i=0; i<4; i++)
+    {
+        F2 = get_tree(F);
+        if (get_score1(F, F2)==N*N)
+            break;
+    }
+
     //cerr<<to_string(F2)<<endl;
 
     auto end = chrono::system_clock::now();
