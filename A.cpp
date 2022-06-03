@@ -182,44 +182,90 @@ int get_score2(const vector<int> &F)
 
     if (compl_<N-2)
     {
-        int compr = 0;
-        for (int x=0; x<N-2; x++)
-            if (F[compl_*N+x]==compl_*N+x)
-                compr++;
-            else
-                break;
-        s += compr;
+        if (compl_%2==N%2)
+        {
+            int compr = 0;
+            for (int x=0; x<N-2; x++)
+                if (F[compl_*N+x]==compl_*N+x)
+                    compr++;
+                else
+                    break;
+            s += compr;
 
-        if (compr<N-2)
-        {
-            nt = compl_*N+compr;
-            np = compl_*N+compr;
-        }
-        else
-        {
-            //  残り2タイルが入れ替わった状況は詰むので避ける
-            if (F[compl_*N+N-2]==compl_*N+N-1 &&
-                F[compl_*N+N-1]==compl_*N+N-2)
-                ;
-            else if (
-                F[compl_*N+N-2]==compl_*N+N-2 &&
-                F[compl_*N+N-1]==N*N-1 &&
-                F[(compl_+1)*N+N-1]==compl_*N+N-1)
-                s += 3;
-            else if (
-                F[compl_*N+N-1]==compl_*N+N-2 &&
-                F[(compl_+1)*N+N-1]==compl_*N+N-1)
-                s += 2;
-            else if (F[compl_*N+N-1]==compl_*N+N-2)
+            if (compr<N-2)
             {
-                s++;
-                nt = compl_*N+N-1;
-                np = (compl_+1)*N+N-1;
+                nt = compl_*N+compr;
+                np = compl_*N+compr;
             }
             else
             {
-                nt = compl_*N+N-2;
-                np = compl_*N+N-1;
+                //  残り2タイルが入れ替わった状況は詰むので避ける
+                if (F[compl_*N+N-2]==compl_*N+N-1 &&
+                    F[compl_*N+N-1]==compl_*N+N-2)
+                    ;
+                else if (
+                    F[compl_*N+N-2]==compl_*N+N-2 &&
+                    F[compl_*N+N-1]==N*N-1 &&
+                    F[(compl_+1)*N+N-1]==compl_*N+N-1)
+                    s += 3;
+                else if (
+                    F[compl_*N+N-1]==compl_*N+N-2 &&
+                    F[(compl_+1)*N+N-1]==compl_*N+N-1)
+                    s += 2;
+                else if (F[compl_*N+N-1]==compl_*N+N-2)
+                {
+                    s++;
+                    nt = compl_*N+N-1;
+                    np = (compl_+1)*N+N-1;
+                }
+                else
+                {
+                    nt = compl_*N+N-2;
+                    np = compl_*N+N-1;
+                }
+            }
+        }
+        else
+        {
+            int compr = 0;
+            for (int x=N-1; x>=2; x--)
+                if (F[compl_*N+x]==compl_*N+x)
+                    compr++;
+                else
+                    break;
+            s += compr;
+
+            if (compr<N-2)
+            {
+                nt = compl_*N+(N-compr-1);
+                np = compl_*N+(N-compr-1);
+            }
+            else
+            {
+                //  残り2タイルが入れ替わった状況は詰むので避ける
+                if (F[compl_*N+1]==compl_*N+0 &&
+                    F[compl_*N+0]==compl_*N+1)
+                    ;
+                else if (
+                    F[compl_*N+1]==compl_*N+1 &&
+                    F[compl_*N+0]==N*N-1 &&
+                    F[(compl_+1)*N+0]==compl_*N+0)
+                    s += 3;
+                else if (
+                    F[compl_*N+0]==compl_*N+1 &&
+                    F[(compl_+1)*N+0]==compl_*N+0)
+                    s += 2;
+                else if (F[compl_*N+0]==compl_*N+1)
+                {
+                    s++;
+                    nt = compl_*N+0;
+                    np = (compl_+1)*N+0;
+                }
+                else
+                {
+                    nt = compl_*N+1;
+                    np = compl_*N+0;
+                }
             }
         }
     }
