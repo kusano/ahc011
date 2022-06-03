@@ -7,6 +7,8 @@
 #include <chrono>
 using namespace std;
 
+int N, T;
+
 int xor64() {
     static uint64_t x = 88172645463345263ULL;
     x ^= x<<13;
@@ -15,10 +17,8 @@ int xor64() {
     return int(x&0x7fffffff);
 }
 
-string to_string(const vector<vector<int>> &F)
+string to_string(const vector<int> &F)
 {
-    int N = (int)F.size();
-
     string ret;
     for (int y=0; y<N; y++)
     {
@@ -26,10 +26,10 @@ string to_string(const vector<vector<int>> &F)
         for (int x=0; x<N; x++)
         {
             S[1][6*x+3] = '+';
-            if (F[y][x]>>0&1) S[1][6*x+1] = S[1][6*x+2] = '-';
-            if (F[y][x]>>1&1) S[0][6*x+3] = '|';
-            if (F[y][x]>>2&1) S[1][6*x+4] = S[1][6*x+5] = '-';
-            if (F[y][x]>>3&1) S[2][6*x+3] = '|';
+            if (F[y*N+x]>>0&1) S[1][6*x+1] = S[1][6*x+2] = '-';
+            if (F[y*N+x]>>1&1) S[0][6*x+3] = '|';
+            if (F[y*N+x]>>2&1) S[1][6*x+4] = S[1][6*x+5] = '-';
+            if (F[y*N+x]>>3&1) S[2][6*x+3] = '|';
         }
         ret += S[0]+"\n";
         ret += S[1]+"\n";
@@ -39,19 +39,15 @@ string to_string(const vector<vector<int>> &F)
 }
 
 //  タイルの数がどのくらい一致しているかを返す
-int get_score1(const vector<vector<int>> &F1, const vector<vector<int>> &F2)
+int get_score1(const vector<int> &F1, const vector<int> &F2)
 {
-    int N = (int)F1.size();
-
     int C1[16] = {};
-    for (int y=0; y<N; y++)
-        for (int x=0; x<N; x++)
-            C1[F1[y][x]]++;
+    for (int p=0; p<N*N; p++)
+        C1[F1[p]]++;
 
     int C2[16] = {};
-    for (int y=0; y<N; y++)
-        for (int x=0; x<N; x++)
-            C2[F2[y][x]]++;
+    for (int p=0; p<N*N; p++)
+        C2[F2[p]]++;
 
     int c = N*N;
     for (int i=0; i<16; i++)
@@ -60,74 +56,70 @@ int get_score1(const vector<vector<int>> &F1, const vector<vector<int>> &F2)
 }
 
 //  (x, y), (x+1, y), (x, y+1), (x+1, y+1) の辺数を返す
-int count_edge(const vector<vector<int>> &F, int x, int y)
+int count_edge(const vector<int> &F, int x, int y)
 {
-    int N = (int)F.size();
-
     return
-        ((F[y  ][x  ]>>2&1)&(F[y  ][x+1]>>0&1)) +
-        ((F[y+1][x  ]>>2&1)&(F[y+1][x+1]>>0&1)) +
-        ((F[y  ][x  ]>>3&1)&(F[y+1][x  ]>>1&1)) +
-        ((F[y  ][x+1]>>3&1)&(F[y+1][x+1]>>1&1));
+        ((F[(y  )*N+x  ]>>2&1)&(F[(y  )*N+x+1]>>0&1)) +
+        ((F[(y+1)*N+x  ]>>2&1)&(F[(y+1)*N+x+1]>>0&1)) +
+        ((F[(y  )*N+x  ]>>3&1)&(F[(y+1)*N+x  ]>>1&1)) +
+        ((F[(y  )*N+x+1]>>3&1)&(F[(y+1)*N+x+1]>>1&1));
 }
 
 //  (x, y), (x+1, y), (x, y+1), (x+1, y+1) の辺を回転する。
-void rotate_edge(vector<vector<int>> *F, int x, int y, int r)
+void rotate_edge(vector<int> *F, int x, int y, int r)
 {
     r = (r%4+4)%4;
     for (int i=0; i<r; i++)
     {
-        int t1 = (*F)[y  ][x  ]>>3&1;
-        int t2 = (*F)[y+1][x  ]>>1&1;
+        int t1 = (*F)[(y  )*N+x  ]>>3&1;
+        int t2 = (*F)[(y+1)*N+x  ]>>1&1;
 
-        (*F)[y  ][x  ] &= ~(1<<3);
-        (*F)[y  ][x  ] |= ((*F)[y+1][x  ]>>2&1)<<3;
-        (*F)[y+1][x  ] &= ~(1<<1);
-        (*F)[y+1][x  ] |= ((*F)[y+1][x+1]>>0&1)<<1;
+        (*F)[(y  )*N+x  ] &= ~(1<<3);
+        (*F)[(y  )*N+x  ] |= ((*F)[(y+1)*N+x  ]>>2&1)<<3;
+        (*F)[(y+1)*N+x  ] &= ~(1<<1);
+        (*F)[(y+1)*N+x  ] |= ((*F)[(y+1)*N+x+1]>>0&1)<<1;
 
-        (*F)[y+1][x  ] &= ~(1<<2);
-        (*F)[y+1][x  ] |= ((*F)[y+1][x+1]>>1&1)<<2;
-        (*F)[y+1][x+1] &= ~(1<<0);
-        (*F)[y+1][x+1] |= ((*F)[y  ][x+1]>>3&1)<<0;
+        (*F)[(y+1)*N+x  ] &= ~(1<<2);
+        (*F)[(y+1)*N+x  ] |= ((*F)[(y+1)*N+x+1]>>1&1)<<2;
+        (*F)[(y+1)*N+x+1] &= ~(1<<0);
+        (*F)[(y+1)*N+x+1] |= ((*F)[(y  )*N+x+1]>>3&1)<<0;
 
-        (*F)[y+1][x+1] &= ~(1<<1);
-        (*F)[y+1][x+1] |= ((*F)[y  ][x+1]>>0&1)<<1;
-        (*F)[y  ][x+1] &= ~(1<<3);
-        (*F)[y  ][x+1] |= ((*F)[y  ][x  ]>>2&1)<<3;
+        (*F)[(y+1)*N+x+1] &= ~(1<<1);
+        (*F)[(y+1)*N+x+1] |= ((*F)[(y  )*N+x+1]>>0&1)<<1;
+        (*F)[(y  )*N+x+1] &= ~(1<<3);
+        (*F)[(y  )*N+x+1] |= ((*F)[(y  )*N+x  ]>>2&1)<<3;
 
-        (*F)[y  ][x+1] &= ~(1<<0);
-        (*F)[y  ][x+1] |= t1<<0;
-        (*F)[y  ][x  ] &= ~(1<<2);
-        (*F)[y  ][x  ] |= t2<<2;
+        (*F)[(y  )*N+x+1] &= ~(1<<0);
+        (*F)[(y  )*N+x+1] |= t1<<0;
+        (*F)[(y  )*N+x  ] &= ~(1<<2);
+        (*F)[(y  )*N+x  ] |= t2<<2;
     }
 }
 
 //  Fを並び替えて木を作る
-vector<vector<int>> get_tree(vector<vector<int>> F)
+vector<int> get_tree(vector<int> F)
 {
-    int N = (int)F.size();
-
     // +---
     // +---
     // +---
     // +--
-    vector<vector<int>> F2(N, vector<int>(N));
-    F2[0][0] = 12;
+    vector<int> F2(N*N);
+    F2[0] = 12;
     for (int x=1; x<N-1; x++)
-        F2[0][x] = 5;
-    F2[0][N-1] = 1;
+        F2[x] = 5;
+    F2[N-1] = 1;
     for (int y=1; y<N-1; y++)
     {
-        F2[y][0] = 14;
+        F2[y*N+0] = 14;
         for (int x=1; x<N-1; x++)
-            F2[y][x] = 5;
-        F2[y][N-1] = 1;
+            F2[y*N+x] = 5;
+        F2[y*N+N-1] = 1;
     }
-    F2[N-1][0] = 6;
+    F2[(N-1)*N+0] = 6;
     for (int x=1; x<N-2; x++)
-        F2[N-1][x] = 5;
-    F2[N-1][N-2] = 1;
-    F2[N-1][N-1] = 0;
+        F2[(N-1)*N+x] = 5;
+    F2[(N-1)*N+N-2] = 1;
+    F2[(N-1)*N+N-1] = 0;
 
     int s = get_score1(F, F2);
 
@@ -160,25 +152,22 @@ vector<vector<int>> get_tree(vector<vector<int>> F)
 
 struct State
 {
-    vector<vector<int>> F;
-    int sx = 0;
-    int sy = 0;
+    vector<int> F;
+    int sp = 0;
     string moves;
     int score = 0;
 };
 
 //  どのくらい揃っているかを返す
-int get_score2(vector<vector<int>> F)
+int get_score2(const vector<int> &F)
 {
-    int N = (int)F.size();
-
     //  揃っている行数
     int compl_ = 0;
     for (int y=0; y<N-2; y++)
     {
         bool ok = true;
         for (int x=0; x<N; x++)
-            if (F[y][x]!=y*N+x)
+            if (F[y*N+x]!=y*N+x)
                 ok = false;
         if (ok)
             compl_++;
@@ -189,14 +178,13 @@ int get_score2(vector<vector<int>> F)
     int s = compl_*(N+10);
 
     int nt = -1;
-    int nx = 0;
-    int ny = 0;
+    int np = 0;
 
     if (compl_<N-2)
     {
         int compr = 0;
         for (int x=0; x<N-2; x++)
-            if (F[compl_][x]==compl_*N+x)
+            if (F[compl_*N+x]==compl_*N+x)
                 compr++;
             else
                 break;
@@ -205,34 +193,33 @@ int get_score2(vector<vector<int>> F)
         if (compr<N-2)
         {
             nt = compl_*N+compr;
-            nx = compr;
-            ny = compl_;
+            np = compl_*N+compr;
         }
         else
         {
-            if (F[compl_][N-2]==compl_*N+N-1 &&
-                F[compl_][N-1]==compl_*N+N-2)
+            //  残り2タイルが入れ替わった状況は詰むので避ける
+            if (F[compl_*N+N-2]==compl_*N+N-1 &&
+                F[compl_*N+N-1]==compl_*N+N-2)
                 ;
-            else if (F[compl_][N-2]==compl_*N+N-2 &&
-                F[compl_][N-1]==N*N-1 &&
-                F[compl_+1][N-1]==compl_*N+N-1)
+            else if (
+                F[compl_*N+N-2]==compl_*N+N-2 &&
+                F[compl_*N+N-1]==N*N-1 &&
+                F[(compl_+1)*N+N-1]==compl_*N+N-1)
                 s += 3;
             else if (
-                F[compl_][N-1]==compl_*N+N-2 &&
-                F[compl_+1][N-1]==compl_*N+N-1)
+                F[compl_*N+N-1]==compl_*N+N-2 &&
+                F[(compl_+1)*N+N-1]==compl_*N+N-1)
                 s += 2;
-            else if (F[compl_][N-1]==compl_*N+N-2)
+            else if (F[compl_*N+N-1]==compl_*N+N-2)
             {
                 s++;
                 nt = compl_*N+N-1;
-                nx = N-1;
-                ny = compl_+1;
+                np = (compl_+1)*N+N-1;
             }
             else
             {
                 nt = compl_*N+N-2;
-                nx = N-1;
-                ny = compl_;
+                np = compl_*N+N-1;
             }
         }
     }
@@ -240,8 +227,8 @@ int get_score2(vector<vector<int>> F)
     {
         int compr = 0;
         for (int x=0; x<N; x++)
-            if (F[N-2][x]==(N-2)*N+x &&
-                F[N-1][x]==(N-1)*N+x)
+            if (F[(N-2)*N+x]==(N-2)*N+x &&
+                F[(N-1)*N+x]==(N-1)*N+x)
                 compr++;
             else
                 break;
@@ -249,29 +236,28 @@ int get_score2(vector<vector<int>> F)
 
         if (compr<N-2)
         {
-            if (F[N-2][compr]==(N-1)*N+compr &&
-                F[N-1][compr]==(N-2)*N+compr)
+            //  残り2タイルが入れ替わった状況は詰むので避ける
+            if (F[(N-2)*N+compr]==(N-1)*N+compr &&
+                F[(N-1)*N+compr]==(N-2)*N+compr)
                 ;
-            else if (F[N-2][compr]==(N-2)*N+compr &&
-                F[N-1][compr]==N*N-1 &&
-                F[N-1][compr+1]==(N-1)*N+compr)
+            else if (F[(N-2)*N+compr]==(N-2)*N+compr &&
+                F[(N-1)*N+compr]==N*N-1 &&
+                F[(N-1)*N+compr+1]==(N-1)*N+compr)
                 s += 3;
             else if (
-                F[N-1][compr]==(N-2)*N+compr &&
-                F[N-1][compr+1]==(N-1)*N+compr)
+                F[(N-1)*N+compr]==(N-2)*N+compr &&
+                F[(N-1)*N+compr+1]==(N-1)*N+compr)
                 s += 2;
-            else if (F[N-1][compr]==(N-2)*N+compr)
+            else if (F[(N-1)*N+compr]==(N-2)*N+compr)
             {
                 s++;
                 nt = (N-1)*N+compr;
-                nx = compr+1;
-                ny = N-1;
+                np = (N-1)*N+compr+1;
             }
             else
             {
                 nt = (N-2)*N+compr;
-                nx = compr;
-                ny = N-1;
+                np = (N-1)*N+compr;
             }
         }
     }
@@ -280,97 +266,76 @@ int get_score2(vector<vector<int>> F)
 
     if (nt>=0)
     {
-        for (int y=0; y<N; y++)
-            for (int x=0; x<N; x++)
-                if (F[y][x]==nt)
-                    s += 100 - abs(x-nx) - abs(y-ny);
+        for (int p=0; p<N*N; p++)
+            if (F[p]==nt)
+                s += 100 - abs(p/N-np/N) - abs(p%N-np%N);
     }
 
     return s;
 }
 
 //  F1をF2に並び替えるような動きを返す
-string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
+string get_moves(vector<int> F1, vector<int> F2)
 {
-    int N = (int)F1.size();
-
     int WIDTH = N<10 ? 256 : 128;
 
     //  F1とF2の対応
     //  これを並び替えて、0, 1, 2, ... になれば良い
-    vector<vector<int>> F(N, vector<int>(N));
+    vector<int> F(N*N);
 
-    vector<vector<bool>> U(N, vector<bool>(N));
-    int sx = 0;
-    int sy = 0;
-    for (int y1=0; y1<N; y1++)
-        for (int x1=0; x1<N; x1++)
-        {
-            if (F1[y1][x1]==0)
+    vector<bool> U(N*N);
+    int sp = 0;
+    for (int p1=0; p1<N*N; p1++)
+    {
+        if (F1[p1]==0)
+            sp = p1;
+        for (int p2=0; p2<N*N; p2++)
+            if (!U[p2] && F1[p1]==F2[p2])
             {
-                sx = x1;
-                sy = y1;
+                U[p2] = true;
+                F[p1] = p2;
+                break;
             }
-            for (int y2=0; y2<N; y2++)
-                for (int x2=0; x2<N; x2++)
-                    if (!U[y2][x2] && F1[y1][x1]==F2[y2][x2])
-                    {
-                        U[y2][x2] = true;
-                        F[y1][x1] = y2*N+x2;
-                        goto end;
-                    }
-        end:;
-        }
+    }
 
     //  パリティチェック
-    int p = 0;
-    vector<vector<int>> Ftemp = F;
-    for (int y1=0; y1<N; y1++)
-        for (int x1=0; x1<N; x1++)
-        {
-            if (Ftemp[y1][x1]!=y1*N+x1)
-                for (int y2=0; y2<N; y2++)
-                    for (int x2=0; x2<N; x2++)
-                        if (Ftemp[y2][x2]==y1*N+x1)
-                        {
-                            swap(Ftemp[y1][x1], Ftemp[y2][x2]);
-                            p ^= 1;
-                        }
-            if (F[y1][x1]==N*N-1)
-                p ^= (abs(N-1-x1)+abs(N-1-y1))%2;
-        }
+    int par = 0;
+    vector<int> Ftemp = F;
+    for (int p1=0; p1<N*N; p1++)
+    {
+        if (Ftemp[p1]!=p1)
+            for (int p2=0; p2<N*N; p2++)
+                if (Ftemp[p2]==p1)
+                {
+                    swap(Ftemp[p1], Ftemp[p2]);
+                    par ^= 1;
+                }
+        if (F[p1]==N*N-1)
+            par ^= (abs(N-1-p1/N)+abs(N-1-p1%N))%2;
+    }
 
-    if (p!=0)
+    if (par!=0)
     {
         while (true)
         {
-            int x1 = xor64()%N;
-            int y1 = xor64()%N;
-            int x2 = xor64()%N;
-            int y2 = xor64()%N;
-            if (x1!=x2 || y1!=y2)
+            int p1 = xor64()%(N*N);
+            int p2 = xor64()%(N*N);
+            if (p1!=p2)
             {
-                int f1 = F[y1][x1];
-                int f2 = F[y2][x2];
-                if (F2[f1/N][f1%N]==F2[f2/N][f2%N])
+                if (F2[F[p1]]==F2[F[p2]])
                 {
-                    swap(F[y1][x1], F[y2][x2]);
+                    swap(F[p1], F[p2]);
                     break;
                 }
             }
         }
     }
 
-    int T = 2*N*N*N;
     vector<State> S(1);
     S[0].F = F;
-    for (int y=0; y<N; y++)
-        for (int x=0; x<N; x++)
-            if (S[0].F[y][x]==N*N-1)
-            {
-                S[0].sx = x;
-                S[0].sy = y;
-            }
+    for (int p=0; p<N*N; p++)
+        if (S[0].F[p]==N*N-1)
+            S[0].sp = p;
     S[0].score = get_score2(S[0].F)*100;
 
     for (int t=0; t<T; t++)
@@ -390,29 +355,29 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
                     continue;
 
                 if (
-                    m=='U' && s.sy-1<0 ||
-                    m=='D' && s.sy+1>=N ||
-                    m=='L' && s.sx-1<0 ||
-                    m=='R' && s.sx+1>=N)
+                    m=='U' && s.sp<N ||
+                    m=='D' && s.sp>=N*(N-1) ||
+                    m=='L' && s.sp%N==0 ||
+                    m=='R' && s.sp%N==N-1)
                     continue;
 
                 State s2 = s;
                 switch (m) {
                 case 'U':
-                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy-1][s2.sx]);
-                    s2.sy--;
+                    swap(s2.F[s2.sp], s2.F[s2.sp-N]);
+                    s2.sp -= N;
                     break;
                 case 'D':
-                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy+1][s2.sx]);
-                    s2.sy++;
+                    swap(s2.F[s2.sp], s2.F[s2.sp+N]);
+                    s2.sp += N;
                     break;
                 case 'L':
-                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy][s2.sx-1]);
-                    s2.sx--;
+                    swap(s2.F[s2.sp], s2.F[s2.sp-1]);
+                    s2.sp--;
                     break;
                 case 'R':
-                    swap(s2.F[s2.sy][s2.sx], s2.F[s2.sy][s2.sx+1]);
-                    s2.sx++;
+                    swap(s2.F[s2.sp], s2.F[s2.sp+1]);
+                    s2.sp++;
                     break;
                 }
                 s2.moves += m;
@@ -437,23 +402,22 @@ string get_moves(vector<vector<int>> F1, vector<vector<int>> F2)
 
 int main()
 {
-    int N, T;
     cin>>N>>T;
-    vector<vector<int>> F(N, vector<int>(N));
+    vector<int> F(N*N);
     for (int y=0; y<N; y++)
     {
         string t;
         cin>>t;
         for (int x=0; x<N; x++)
             if ('0'<=t[x] && t[x]<='9')
-                F[y][x] = t[x]-'0';
+                F[y*N+x] = t[x]-'0';
             else
-                F[y][x] = t[x]-'a'+10;
+                F[y*N+x] = t[x]-'a'+10;
     }
 
     auto start = chrono::system_clock::now();
 
-    vector<vector<int>> F2;
+    vector<int> F2;
     for (int i=0; i<4; i++)
     {
         F2 = get_tree(F);
