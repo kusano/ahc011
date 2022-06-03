@@ -150,13 +150,74 @@ vector<int> get_tree(vector<int> F)
     return F2;
 }
 
-struct State
+vector<int> get_perm(vector<int> F1, vector<int> F2)
 {
-    vector<int> F;
+    //  F1とF2の対応
+    //  これを並び替えて、0, 1, 2, ... になれば良い
+    vector<int> F(N*N);
+
+    vector<bool> U(N*N);
     int sp = 0;
-    string moves;
-    int score = 0;
-};
+    for (int p1=0; p1<N*N; p1++)
+    {
+        if (F1[p1]==0)
+            sp = p1;
+        for (int p2=0; p2<N*N; p2++)
+            if (!U[p2] && F1[p1]==F2[p2])
+            {
+                U[p2] = true;
+                F[p1] = p2;
+                break;
+            }
+    }
+
+    //  距離の合計を最小化
+    //  厳密解も求められるが……これでいいだろ
+    for (int i=0; i<1000000; i++)
+    {
+        int p1 = xor64()%(N*N);
+        int p2 = xor64()%(N*N);
+        if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
+        {
+            int s1 = abs(F[p1]/N-p1/N)+abs(F[p1]%N-p1%N)+abs(F[p2]/N-p2/N)+abs(F[p2]%N-p2%N);
+            int s2 = abs(F[p2]/N-p1/N)+abs(F[p2]%N-p1%N)+abs(F[p1]/N-p2/N)+abs(F[p1]%N-p2%N);
+            if (s2<s1)
+                swap(F[p1], F[p2]);
+        }
+    }
+
+    //  パリティチェック
+    int par = 0;
+    vector<int> Ftemp = F;
+    for (int p1=0; p1<N*N; p1++)
+    {
+        if (Ftemp[p1]!=p1)
+            for (int p2=0; p2<N*N; p2++)
+                if (Ftemp[p2]==p1)
+                {
+                    swap(Ftemp[p1], Ftemp[p2]);
+                    par ^= 1;
+                }
+        if (F[p1]==N*N-1)
+            par ^= (abs(N-1-p1/N)+abs(N-1-p1%N))%2;
+    }
+
+    if (par!=0)
+    {
+        while (true)
+        {
+            int p1 = xor64()%(N*N);
+            int p2 = xor64()%(N*N);
+            if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
+            {
+                swap(F[p1], F[p2]);
+                break;
+            }
+        }
+    }
+
+    return F;
+}
 
 //  どのくらい揃っているかを返す
 int get_score2(const vector<int> &F)
@@ -335,78 +396,17 @@ int get_score2(const vector<int> &F)
     return s;
 }
 
-vector<int> get_perm(vector<int> F1, vector<int> F2)
-{
-    //  F1とF2の対応
-    //  これを並び替えて、0, 1, 2, ... になれば良い
-    vector<int> F(N*N);
-
-    vector<bool> U(N*N);
-    int sp = 0;
-    for (int p1=0; p1<N*N; p1++)
-    {
-        if (F1[p1]==0)
-            sp = p1;
-        for (int p2=0; p2<N*N; p2++)
-            if (!U[p2] && F1[p1]==F2[p2])
-            {
-                U[p2] = true;
-                F[p1] = p2;
-                break;
-            }
-    }
-
-    //  距離の合計を最小化
-    //  厳密解も求められるが……これでいいだろ
-    for (int i=0; i<1000000; i++)
-    {
-        int p1 = xor64()%(N*N);
-        int p2 = xor64()%(N*N);
-        if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
-        {
-            int s1 = abs(F[p1]/N-p1/N)+abs(F[p1]%N-p1%N)+abs(F[p2]/N-p2/N)+abs(F[p2]%N-p2%N);
-            int s2 = abs(F[p2]/N-p1/N)+abs(F[p2]%N-p1%N)+abs(F[p1]/N-p2/N)+abs(F[p1]%N-p2%N);
-            if (s2<s1)
-                swap(F[p1], F[p2]);
-        }
-    }
-
-    //  パリティチェック
-    int par = 0;
-    vector<int> Ftemp = F;
-    for (int p1=0; p1<N*N; p1++)
-    {
-        if (Ftemp[p1]!=p1)
-            for (int p2=0; p2<N*N; p2++)
-                if (Ftemp[p2]==p1)
-                {
-                    swap(Ftemp[p1], Ftemp[p2]);
-                    par ^= 1;
-                }
-        if (F[p1]==N*N-1)
-            par ^= (abs(N-1-p1/N)+abs(N-1-p1%N))%2;
-    }
-
-    if (par!=0)
-    {
-        while (true)
-        {
-            int p1 = xor64()%(N*N);
-            int p2 = xor64()%(N*N);
-            if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
-            {
-                swap(F[p1], F[p2]);
-                break;
-            }
-        }
-    }
-
-    return F;
-}
-
 //  Fを 0, 1, 2, ... に並び替えるような動きを返す
 string get_moves(vector<int> F)
 {
+    struct State
+    {
+        vector<int> F;
+        int sp = 0;
+        string moves;
+        int score = 0;
+    };
+
     int WIDTH;
     switch (N) {
     case  6: WIDTH = 2048; break;
