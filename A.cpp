@@ -274,11 +274,8 @@ int get_score2(const vector<int> &F)
     return s;
 }
 
-//  F1をF2に並び替えるような動きを返す
-string get_moves(vector<int> F1, vector<int> F2)
+vector<int> get_perm(vector<int> F1, vector<int> F2)
 {
-    int WIDTH = N<10 ? 256 : 128;
-
     //  F1とF2の対応
     //  これを並び替えて、0, 1, 2, ... になれば良い
     vector<int> F(N*N);
@@ -296,6 +293,21 @@ string get_moves(vector<int> F1, vector<int> F2)
                 F[p1] = p2;
                 break;
             }
+    }
+
+    //  距離の合計を最小化
+    //  厳密解も求められるが……これでいいだろ
+    for (int i=0; i<1000000; i++)
+    {
+        int p1 = xor64()%(N*N);
+        int p2 = xor64()%(N*N);
+        if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
+        {
+            int s1 = abs(F[p1]/N-p1/N)+abs(F[p1]%N-p1%N)+abs(F[p2]/N-p2/N)+abs(F[p2]%N-p2%N);
+            int s2 = abs(F[p2]/N-p1/N)+abs(F[p2]%N-p1%N)+abs(F[p1]/N-p2/N)+abs(F[p1]%N-p2%N);
+            if (s2<s1)
+                swap(F[p1], F[p2]);
+        }
     }
 
     //  パリティチェック
@@ -320,16 +332,21 @@ string get_moves(vector<int> F1, vector<int> F2)
         {
             int p1 = xor64()%(N*N);
             int p2 = xor64()%(N*N);
-            if (p1!=p2)
+            if (p1!=p2 && F2[F[p1]]==F2[F[p2]])
             {
-                if (F2[F[p1]]==F2[F[p2]])
-                {
-                    swap(F[p1], F[p2]);
-                    break;
-                }
+                swap(F[p1], F[p2]);
+                break;
             }
         }
     }
+
+    return F;
+}
+
+//  Fを 0, 1, 2, ... に並び替えるような動きを返す
+string get_moves(vector<int> F)
+{
+    int WIDTH = N<10 ? 256 : 128;
 
     vector<State> S(1);
     S[0].F = F;
@@ -441,7 +458,9 @@ int main()
         return 0;
     }
 
-    string moves = get_moves(F, F2);
+    vector<int> P = get_perm(F, F2);
+
+    string moves = get_moves(P);
     cout<<moves<<endl;
 
     end = chrono::system_clock::now();
