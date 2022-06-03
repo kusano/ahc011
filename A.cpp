@@ -392,7 +392,14 @@ vector<int> get_perm(vector<int> F1, vector<int> F2)
 //  Fを 0, 1, 2, ... に並び替えるような動きを返す
 string get_moves(vector<int> F)
 {
-    int WIDTH = N<10 ? 256 : 128;
+    int WIDTH;
+    switch (N) {
+    case  6: WIDTH = 2048; break;
+    case  7: WIDTH = 1380; break;
+    case  8: WIDTH = 1024; break;
+    case  9: WIDTH =  512; break;
+    case 10: WIDTH =  256; break;
+    }
 
     vector<State> S(1);
     S[0].F = F;
@@ -481,7 +488,7 @@ int main()
     auto start = chrono::system_clock::now();
 
     vector<int> F2;
-    for (int i=0; i<4; i++)
+    for (int i=0; i<8; i++)
     {
         F2 = get_tree(F);
         if (get_score1(F, F2)==N*N)
