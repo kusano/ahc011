@@ -397,7 +397,7 @@ int get_score2(const vector<int> &F)
 }
 
 //  Fを 0, 1, 2, ... に並び替えるような動きを返す
-string get_moves(vector<int> F)
+string get_moves(vector<int> F, chrono::system_clock::time_point start)
 {
     struct State
     {
@@ -466,6 +466,14 @@ string get_moves(vector<int> F)
         sort(S.begin(), S.end(), [&](State &s1, State &s2){
             return s1.score>s2.score;
         });
+
+        //  緊急回避
+        if (WIDTH>128 && chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now()-start).count()>=2800)
+        {
+            cerr<<"emergency "<<t<<"/"<<T<<endl;
+            WIDTH = 128;
+        }
+
         if (S.size()>WIDTH)
             S.resize(WIDTH);
 
@@ -521,7 +529,7 @@ int main()
 
     vector<int> P = get_perm(F, F2);
 
-    string moves = get_moves(P);
+    string moves = get_moves(P, start);
     cout<<moves<<endl;
 
     end = chrono::system_clock::now();
