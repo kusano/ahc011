@@ -504,11 +504,14 @@ int main()
     auto start = chrono::system_clock::now();
 
     vector<int> F2;
-    for (int i=0; i<8; i++)
+    for (int i=0; i<16; i++)
     {
         F2 = get_tree(F);
         if (get_score1(F, F2)==N*N)
+        {
+            cerr<<"phase 1 i="<<i<<endl;
             break;
+        }
     }
 
     //cerr<<to_string(F2)<<endl;
