@@ -407,14 +407,7 @@ string get_moves(vector<int> F)
         int score = 0;
     };
 
-    int WIDTH;
-    switch (N) {
-    case  6: WIDTH = 2048; break;
-    case  7: WIDTH = 1380; break;
-    case  8: WIDTH = 1024; break;
-    case  9: WIDTH =  512; break;
-    case 10: WIDTH =  256; break;
-    }
+    int WIDTH = 100'000'000/N/N/N/N/N;
 
     vector<State> S(1);
     S[0].F = F;
